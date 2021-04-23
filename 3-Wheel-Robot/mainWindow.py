@@ -35,6 +35,7 @@ def connect():
     t1 = threading.Thread(target = get_data)
     t1.daemon = True
     t1.start()
+    
 
 
 def get_data():
