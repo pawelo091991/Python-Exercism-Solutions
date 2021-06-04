@@ -1,5 +1,4 @@
 from random import randrange, seed
-from random import random
 
 class Cipher:
     
