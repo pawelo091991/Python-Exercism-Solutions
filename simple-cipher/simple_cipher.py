@@ -1,16 +1,29 @@
-class Cipher:
+from random import randrange, seed
+from random import random
 
-    key = list()
+class Cipher:
+    
+    key = ""
     
     def __init__(self, key=None):
-        pass
+        if key is None:
+            seed(1)
+            for i in range(0,100):
+                self.key += chr(randrange(97,122))
+        else:
+            for char in key:
+                self.key = key
 
     def encode(self, text):
-        for char in text:
-          if char.isalpha() == True:
-                char = chr((ord(char) - 97 + 2) % 26 + 97)
-                self.key.append(char)
-        return self.key
+        encodeStr = ""
+        for i in range(0, len(text)):
+            if text[i].isalpha() == True:
+                encodeStr += chr((ord(text[i]) - 97 + ord(self.key[i%len(self.key)]) - 97) % 26 + 97)
+        return encodeStr
 
     def decode(self, text):
-        pass
+        decodeStr = ""
+        for i in range(0, len(text)):
+            if text[i].isalpha() == True:
+                decodeStr += chr((ord(text[i]) - 97 - (ord(self.key[i%len(self.key)]) - 97)) % 26 + 97)
+        return decodeStr
