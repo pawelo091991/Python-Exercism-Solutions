@@ -1,15 +1,15 @@
+import re
+
 def count_words(sentence):
-
-    for sign in '-.,\n:_!&@$%^&':
-        sentence = sentence.replace(sign, ' ')
-
-    sentence = sentence.lower()
-    word_list = sentence.split()
+    
+    word_list = re.findall('\w+\'\w+|[A-Za-z1-9]+', sentence)
 
     dictionary = {}
     for word in word_list:
-        while word[0] == "'" and word[-1] == "'":
-            word = word[1:-1]
-        dictionary[word] = dictionary.get(word, 0) + 1
-
+        word = word.lower()
+        if word in dictionary:
+            dictionary[word] += 1
+        else:
+            dictionary[word] = 1
+        
     return dictionary
