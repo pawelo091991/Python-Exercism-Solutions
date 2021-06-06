@@ -1,15 +1,25 @@
+from collections import defaultdict
 import re
+
+def def_value():
+    return 0
 
 def count_words(sentence):
     
-    word_list = re.findall('\w+\'\w+|[A-Za-z1-9]+', sentence)
+    word_regex = re.compile(
+	r"""
+			[0-9]+              # A number...
+		|   [a-z]+ ' [a-z]+     # or a word with an apostrophe...
+		|   [a-z]+              # or a word without an apostrophe.
+	""",
+	re.VERBOSE
+    )
+    
+    results = word_regex.findall(sentence.lower())
 
-    dictionary = {}
-    for word in word_list:
-        word = word.lower()
-        if word in dictionary:
-            dictionary[word] += 1
-        else:
-            dictionary[word] = 1
-        
+    dictionary = defaultdict(def_value)
+
+    for word in results:
+        dictionary[word] += 1
+
     return dictionary
