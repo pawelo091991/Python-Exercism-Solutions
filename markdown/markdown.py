@@ -2,76 +2,88 @@ import re
 
 
 def parse(markdown):
-    lines = markdown.split('\n')
-    res = ''
-    in_list = False
-    in_list_append = False
-    for i in lines:
-        if re.match('###### (.*)', i) is not None:
-            i = '<h6>' + i[7:] + '</h6>'
-        elif re.match('##### (.*)', i) is not None:
-            i = '<h5>' + i[6:] + '</h5>'
-        elif re.match('#### (.*)', i) is not None:
-            i = '<h4>' + i[5:] + '</h4>'
-        elif re.match('### (.*)', i) is not None:
-            i = '<h3>' + i[4:] + '</h3>'
-        elif re.match('## (.*)', i) is not None:
-            i = '<h2>' + i[3:] + '</h2>'
-        elif re.match('# (.*)', i) is not None:
-            i = '<h1>' + i[2:] + '</h1>'
-        m = re.match(r'\* (.*)', i)
-        if m:
-            if not in_list:
-                in_list = True
-                is_bold = False
-                is_italic = False
-                curr = m.group(1)
-                m1 = re.match('(.*)__(.*)__(.*)', curr)
-                if m1:
-                    curr = m1.group(1) + '<strong>' + \
-                        m1.group(2) + '</strong>' + m1.group(3)
-                    is_bold = True
-                m1 = re.match('(.*)_(.*)_(.*)', curr)
-                if m1:
-                    curr = m1.group(1) + '<em>' + m1.group(2) + \
-                        '</em>' + m1.group(3)
-                    is_italic = True
-                i = '<ul><li>' + curr + '</li>'
-            else:
-                is_bold = False
-                is_italic = False
-                curr = m.group(1)
-                m1 = re.match('(.*)__(.*)__(.*)', curr)
-                if m1:
-                    is_bold = True
-                m1 = re.match('(.*)_(.*)_(.*)', curr)
-                if m1:
-                    is_italic = True
-                if is_bold:
-                    curr = m1.group(1) + '<strong>' + \
-                        m1.group(2) + '</strong>' + m1.group(3)
-                if is_italic:
-                    curr = m1.group(1) + '<em>' + m1.group(2) + \
-                        '</em>' + m1.group(3)
-                i = '<li>' + curr + '</li>'
-        else:
-            if in_list:
-                in_list_append = True
-                in_list = False
 
-        m = re.match('<h|<ul|<p|<li', i)
-        if not m:
-            i = '<p>' + i + '</p>'
-        m = re.match('(.*)__(.*)__(.*)', i)
-        if m:
-            i = m.group(1) + '<strong>' + m.group(2) + '</strong>' + m.group(3)
-        m = re.match('(.*)_(.*)_(.*)', i)
-        if m:
-            i = m.group(1) + '<em>' + m.group(2) + '</em>' + m.group(3)
-        if in_list_append:
-            i = '</ul>' + i
-            in_list_append = False
-        res += i
-    if in_list:
-        res += '</ul>'
-    return res
+    lines = markdown.split('\n')
+    result = ''
+    finish_ul = ''
+    list_exist = False
+    list_curr = False  
+    header_exist = False  
+
+    
+    for line in lines:
+
+        # Find headers 
+        if re.match('###### .*', line):
+            line =  '<h6>' + line[7:] + '</h6>'
+            header_exist = True 
+        elif re.match('##### .*', line):
+            line =  '<h5>' + line[6:] + '</h5>'
+            header_exist = True 
+        elif re.match('#### .*', line):
+            line =  '<h4>' + line[5:] + '</h4>'
+            header_exist = True 
+        elif re.match('### .*', line):
+            line =  '<h3>' + line[4:] + '</h3>'
+            header_exist = True 
+        elif re.match('## .*', line):
+            line =  '<h2>' + line[3:] + '</h2>'
+            header_exist = True 
+        elif re.match('# .*', line):
+            line =  '<h1>' + line[2:] + '</h1>'
+            header_exist = True 
+
+        # Lists
+        if re.match(r'\* (.*)', line):
+            # Check if the list is already started
+            if list_exist == False:
+                list_exist = True
+                list_curr = True
+                line = '<ul><li>' + line[2:] + '</li>'
+            else:
+                list_curr = True
+                line = '<li>' + line[2:] + '</li>'
+        
+        # Find bold words in line and parse them
+        bold_words = re.findall('__.*?__', line)
+        if bold_words:
+            for bold_word in bold_words:
+                line = line.replace(bold_word, '<strong>'+bold_word.replace("__","")+'</strong>')
+
+        
+        # Find italic words in line and parse them
+        italic_words = re.findall('_.*?_', line)
+        if italic_words:
+            for italic_word in italic_words:
+                line = line.replace(italic_word, '<em>'+italic_word.replace("_","")+'</em>')
+
+        
+        # Check if list ended (list exist but there is no '*' in this line)
+        if list_exist and not list_curr:
+            finish_ul = '</ul>'
+            list_exist = False
+
+        # Add paragrah if there is no list nor header in this line
+        if not list_exist  and not header_exist:
+            line = '<p>' + line + '</p>'
+
+
+        # End current list entry
+        list_curr = False
+
+        # End current header
+        header_exist = False
+
+        # Add '</ul>' if it is necessery, case for ending the list in the middle of text
+        # Othewise finish_ul shall be empty
+        line = finish_ul + line
+
+        # Add parsed line to result
+        result += line
+
+    # Close the list if we parsed all lines, case for list at the end of text
+    if list_exist:
+        result = result + '</ul>'
+
+    # Return the result
+    return result
