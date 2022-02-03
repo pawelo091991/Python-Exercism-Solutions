@@ -2,7 +2,7 @@ import unittest
 
 from resistor_color import (
     color_code,
-    clr,
+    colors,
 )
 
 # Tests adapted from `problem-specifications//canonical-data.json`
@@ -31,7 +31,7 @@ class ResistorColorTest(unittest.TestCase):
             "grey",
             "white",
         ]
-        self.assertEqual(clr(), expected)
+        self.assertEqual(colors(), expected)
 
 
 if __name__ == "__main__":
