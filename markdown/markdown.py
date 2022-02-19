@@ -1,6 +1,47 @@
 import re
 
 
+def headers(line):
+    if hash := re.match('^#+', line):
+        if (hash := hash[0].count('#')) < 7:
+            line = f'<h{hash}>' + line[hash+1:] + f'</h{hash}>'
+            return True, line
+    return False, line   
+
+
+def bold_words(line):
+    if bold_words := re.findall('__.*?__', line):
+        for bold_word in bold_words:
+            line = line.replace(bold_word, '<strong>'+bold_word.replace("__","")+'</strong>')
+    return line
+
+
+def italic_words(line):
+    if italic_words := re.findall('_.*?_', line):
+        for italic_word in italic_words:
+            line = line.replace(italic_word, '<em>'+italic_word.replace("_","")+'</em>')
+    return line
+
+
+def lists(line, list_exist, list_curr, finish_ul):
+    if re.match(r'\* (.*)', line):
+    # Check if the list is already started
+        if list_exist == False:
+            list_exist = True
+            list_curr = True
+            line = '<ul><li>' + line[2:] + '</li>'
+        else:
+            list_curr = True
+            line = '<li>' + line[2:] + '</li>'
+
+    if list_exist and not list_curr:
+            finish_ul = '</ul>'
+            list_exist = False
+
+    list_curr = False
+    return line, list_exist, list_curr, finish_ul
+
+
 def parse(markdown):
 
     lines = markdown.split('\n')
@@ -13,63 +54,16 @@ def parse(markdown):
     
     for line in lines:
 
-        # Find headers 
-        if re.match('###### .*', line):
-            line =  '<h6>' + line[7:] + '</h6>'
-            header_exist = True 
-        elif re.match('##### .*', line):
-            line =  '<h5>' + line[6:] + '</h5>'
-            header_exist = True 
-        elif re.match('#### .*', line):
-            line =  '<h4>' + line[5:] + '</h4>'
-            header_exist = True 
-        elif re.match('### .*', line):
-            line =  '<h3>' + line[4:] + '</h3>'
-            header_exist = True 
-        elif re.match('## .*', line):
-            line =  '<h2>' + line[3:] + '</h2>'
-            header_exist = True 
-        elif re.match('# .*', line):
-            line =  '<h1>' + line[2:] + '</h1>'
-            header_exist = True 
 
-        # Lists
-        if re.match(r'\* (.*)', line):
-            # Check if the list is already started
-            if list_exist == False:
-                list_exist = True
-                list_curr = True
-                line = '<ul><li>' + line[2:] + '</li>'
-            else:
-                list_curr = True
-                line = '<li>' + line[2:] + '</li>'
+        header_exist, line = headers(line)
+        line = bold_words(line)
+        line = italic_words(line)
+        line, list_exist, list_curr, finish_ul = lists(line, list_exist, list_curr, finish_ul)
         
-        # Find bold words in line and parse them
-        bold_words = re.findall('__.*?__', line)
-        if bold_words:
-            for bold_word in bold_words:
-                line = line.replace(bold_word, '<strong>'+bold_word.replace("__","")+'</strong>')
-
-        
-        # Find italic words in line and parse them
-        italic_words = re.findall('_.*?_', line)
-        if italic_words:
-            for italic_word in italic_words:
-                line = line.replace(italic_word, '<em>'+italic_word.replace("_","")+'</em>')
-
-        
-        # Check if list ended (list exist but there is no '*' in this line)
-        if list_exist and not list_curr:
-            finish_ul = '</ul>'
-            list_exist = False
-
         # Add paragrah if there is no list nor header in this line
         if not list_exist  and not header_exist:
             line = '<p>' + line + '</p>'
 
-
-        # End current list entry
-        list_curr = False
 
         # End current header
         header_exist = False
