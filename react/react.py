@@ -1,8 +1,16 @@
-class InputCell:
-    def __init__(self, initial_value):
-        self.__value = initial_value
-        self.__compute_cells = []
+class Cell:
+    formula_cells = []
 
+    def __init__(self, value = None, inputs = None, function = None):
+        if value != None:
+            self.__value = value
+        else:
+            self.__inputs = inputs
+            self.__function = function
+            self.__value = function(self.__inputs)
+            self.__callbacks = []
+            Cell.formula_cells.append(self)
+            
     @property
     def value(self):
         return self.__value
@@ -10,43 +18,50 @@ class InputCell:
     @value.setter
     def value(self, value):
         self.__value = value
-        for compute_cell in self.__compute_cells:
-            compute_cell.update()
+        for cell in Cell.formula_cells:
+            cell.update()
 
-    def __add__(self, val):
-        return self.__value + val
+    def update(self):
+        value = self.__function(self.__inputs)
+        if self.__value != self.__function(self.__inputs):
+            self.__value = value
+            for callback in self.__callbacks:
+                callback(self.__value)
 
-    def __mul__(self, val):
-        return self.__value * val
+    def add_callback(self, callback):
+        self.__callbacks.append(callback)
 
-    def assign(self, compute_cell):
-        self.__compute_cells.append(compute_cell)
+    def remove_callback(self, callback):
+        if callback in self.__callbacks:
+            self.__callbacks.remove(callback)
 
+    def __add__(self, value):
+        return self.__value + value
+
+    def __radd__(self, value):
+        return self.__value + value
+
+    def __sub__(self, value):
+        return self.__value - value
+
+    def __rsub__(self, value):
+        return value - self.__value
+
+    def __mul__(self, value):
+        return self.__value * value
+
+    def __rmul__(self, value):
+        return self.__value * value
+
+    def __lt__(self, value):
+        return True if self.__value < value else False
+
+
+class InputCell:
+    def __new__(cls, value):
+        return Cell(value=value)
 
 
 class ComputeCell:
-    def __init__(self, inputs, compute_function):
-        self.__inputs = inputs
-        self.__function = compute_function
-        self.__value = compute_function(self.__inputs)
-
-        for input in self.__inputs:
-            input.assign(self)
-            
-        
-
-    @property
-    def value(self):
-        return self.__value
-
-    def add_callback(self, callback):
-        pass
-
-    def remove_callback(self, callback):
-        pass
-
-    def __add__(self, val):
-        return self.__value + val.value
-
-    def update(self):
-        self.__value = self.__function(self.__inputs)
+    def __new__(self, inputs, compute_function):
+        return Cell(inputs=inputs, function=compute_function)
